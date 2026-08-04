@@ -1,7 +1,15 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, MessageFlags } = require('discord.js');
-const { ensureList, findLevel, suggestLevels, getLevelDetails, getMaxPosition } = require('./aredl');
-const { buildLevelEmbed } = require('./embed');
+const {
+    ensureList,
+    findLevel,
+    suggestLevels,
+    getLevelDetails,
+    getMaxPosition,
+    findPlayer,
+    suggestPlayers,
+} = require('./aredl');
+const { buildLevelEmbed, buildPlayerEmbed } = require('./embed');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -15,42 +23,77 @@ client.once('clientReady', async () => {
     }
 });
 
+async function replyError(interaction, err) {
+    console.error('Command error:', err);
+    const message = 'Something went wrong while fetching that. Please try again.';
+    if (interaction.deferred || interaction.replied) {
+        await interaction.editReply(message).catch(() => {});
+    } else {
+        await interaction
+            .reply({ content: message, flags: MessageFlags.Ephemeral })
+            .catch(() => {});
+    }
+}
+
 client.on('interactionCreate', async (interaction) => {
-    if (interaction.isAutocomplete() && interaction.commandName === 'level') {
+    if (interaction.isAutocomplete()) {
         try {
             const query = interaction.options.getFocused();
-            await interaction.respond(await suggestLevels(query));
+            if (interaction.commandName === 'level') {
+                await interaction.respond(await suggestLevels(query));
+            } else if (interaction.commandName === 'player') {
+                await interaction.respond(await suggestPlayers(query));
+            }
         } catch (err) {
             console.error('Autocomplete error:', err);
+            await interaction.respond([]).catch(() => {});
         }
         return;
     }
 
-    if (!interaction.isChatInputCommand() || interaction.commandName !== 'level') return;
+    if (!interaction.isChatInputCommand()) return;
 
-    try {
-        await interaction.deferReply();
-        const query = interaction.options.getString('query', true);
-        const level = await findLevel(query);
+    if (interaction.commandName === 'level') {
+        try {
+            await interaction.deferReply();
+            const query = interaction.options.getString('query', true);
+            const level = await findLevel(query);
 
-        if (!level) {
-            await interaction.editReply(
-                `No level matching **${query}** was found on the AREDL.`
-            );
-            return;
+            if (!level) {
+                await interaction.editReply(
+                    `No level matching **${query}** was found on the AREDL.`
+                );
+                return;
+            }
+
+            const details = await getLevelDetails(level.id);
+            await interaction.editReply({
+                embeds: [buildLevelEmbed(details, getMaxPosition())],
+            });
+        } catch (err) {
+            await replyError(interaction, err);
         }
+        return;
+    }
 
-        const details = await getLevelDetails(level.id);
-        await interaction.editReply({ embeds: [buildLevelEmbed(details, getMaxPosition())] });
-    } catch (err) {
-        console.error('Command error:', err);
-        const message = 'Something went wrong while fetching that level. Please try again.';
-        if (interaction.deferred || interaction.replied) {
-            await interaction.editReply(message).catch(() => {});
-        } else {
-            await interaction
-                .reply({ content: message, flags: MessageFlags.Ephemeral })
-                .catch(() => {});
+    if (interaction.commandName === 'player') {
+        try {
+            await interaction.deferReply();
+            const query = interaction.options.getString('query', true);
+            const result = await findPlayer(query);
+
+            if (!result) {
+                await interaction.editReply(
+                    `No player matching **${query}** was found on the AREDL.`
+                );
+                return;
+            }
+
+            await interaction.editReply({
+                embeds: [buildPlayerEmbed(result.profile, result.entry)],
+            });
+        } catch (err) {
+            await replyError(interaction, err);
         }
     }
 });

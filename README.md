@@ -2,13 +2,17 @@
 
 Discord bot that looks up levels on the [All Rated Extreme Demons List](https://aredl.net/) (AREDL).
 
-## Command
+## Commands
 
-`/level query:<level name or level ID>` — shows an embed with the level's list position,
-description, level ID, list points, publisher, verifier and tags. Autocomplete suggests
-level names as you type.
+`/level query:<name, placement, or level ID>` — level info embed (position, description,
+level ID, list points, publisher, verifier, tags). Autocomplete supported. Typing a
+placement number (e.g. `1`) looks up that list position.
 
-The embed color reflects difficulty: bright red (`#ff0000`) at the bottom of the list,
+`/player query:<name, global rank, or Discord ID>` — player stats embed with Discord pfp,
+rank, level/pack/total points, extremes, hardest, country, and clan. Autocomplete
+supported. Typing a rank number (e.g. `1`) looks up that leaderboard placement.
+
+Level embed color reflects difficulty: bright red (`#ff0000`) at the bottom of the list,
 fading to pitch black (`#000000`) at #1.
 
 Works both as a **server app** and as a **user-installed (personal) app**.

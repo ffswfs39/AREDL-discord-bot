@@ -4,26 +4,41 @@ const {
     InteractionContextType,
 } = require('discord.js');
 
+const installTypes = [
+    ApplicationIntegrationType.GuildInstall,
+    ApplicationIntegrationType.UserInstall,
+];
+
+const contexts = [
+    InteractionContextType.Guild,
+    InteractionContextType.BotDM,
+    InteractionContextType.PrivateChannel,
+];
+
 const levelCommand = new SlashCommandBuilder()
     .setName('level')
     .setDescription('Look up a level on the All Rated Extreme Demons List')
     .addStringOption((opt) =>
         opt
             .setName('query')
-            .setDescription('Level name or level ID')
+            .setDescription('Level name, placement (#), or level ID')
             .setRequired(true)
             .setAutocomplete(true)
     )
-    // installable both on servers and on user accounts
-    .setIntegrationTypes(
-        ApplicationIntegrationType.GuildInstall,
-        ApplicationIntegrationType.UserInstall
-    )
-    // usable in servers, bot DMs and private channels / group DMs
-    .setContexts(
-        InteractionContextType.Guild,
-        InteractionContextType.BotDM,
-        InteractionContextType.PrivateChannel
-    );
+    .setIntegrationTypes(...installTypes)
+    .setContexts(...contexts);
 
-module.exports = { levelCommand };
+const playerCommand = new SlashCommandBuilder()
+    .setName('player')
+    .setDescription('Look up a player on the AREDL leaderboard')
+    .addStringOption((opt) =>
+        opt
+            .setName('query')
+            .setDescription('Player name, global rank (#), or Discord ID')
+            .setRequired(true)
+            .setAutocomplete(true)
+    )
+    .setIntegrationTypes(...installTypes)
+    .setContexts(...contexts);
+
+module.exports = { levelCommand, playerCommand };
